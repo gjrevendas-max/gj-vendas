@@ -72,9 +72,9 @@
         <p class="text-xs text-gray-500 pt-1">Acesso restrito a quem gerencia a vitrine.</p>
       </div>
 
-      <div id="email-field" class="space-y-1.5 hidden">
+      <div id="email-field" class="space-y-1.5">
         <label class="block text-xs font-bold uppercase tracking-wider text-gray-600">E-mail</label>
-        <input type="email" id="login-email" disabled autocomplete="username" placeholder="voce@email.com" class="field" />
+        <input type="email" id="login-email" required autocomplete="username" placeholder="voce@email.com" class="field" />
       </div>
 
       <div class="space-y-1.5">
@@ -91,7 +91,9 @@
         <i class="fa-solid fa-right-to-bracket"></i> Entrar
       </button>
 
-      <p id="login-mode-note" class="text-[11px] text-center text-gray-400 leading-relaxed"></p>
+      <p id="login-mode-note" class="text-[11px] text-center text-gray-400 leading-relaxed">
+        Entre com o e-mail e a senha cadastrados no painel do Supabase (Authentication > Users).
+      </p>
 
       <a href="index.html" class="block text-center text-xs font-semibold text-brand-terracotta hover:underline pt-3 border-t border-brand-creamCard">
         <i class="fa-solid fa-arrow-left mr-1"></i> Voltar para a vitrine
@@ -113,7 +115,9 @@
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <span id="mode-badge" class="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full"></span>
+          <span id="mode-badge" class="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full bg-brand-sageLight text-brand-sage">
+            <i class="fa-solid fa-database text-[9px]"></i> Supabase conectado
+          </span>
           <a href="index.html" target="_blank" class="bg-white hover:bg-brand-creamCard border border-brand-creamCard text-gray-700 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
             <i class="fa-solid fa-store text-brand-sage"></i><span class="hidden sm:inline">Ver vitrine</span>
           </a>
@@ -243,36 +247,15 @@
 
   <script>
     /* ================================================================
-       CONFIGURAÇÃO DO SUPABASE — cole as MESMAS chaves do index.html
+        CONFIGURAÇÃO DO SUPABASE — URL corrigida sem o /rest/v1/
     ================================================================ */
-    const SUPABASE_URL     = 'https://dfxfhsddymqgvrsqurtw.supabase.co/rest/v1/';
+    const SUPABASE_URL      = 'https://dfxfhsddymqgvrsqurtw.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmeGZoc2RkeW1xZ3Zyc3F1cnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3NDQzMzQsImV4cCI6MjEwNTMyMDMzNH0.9S9AOILAm0ggT7wdcGPRKO_o--oCZwpkruHgL_8yPFw';
 
-    /* Senha usada APENAS no modo local (quando o Supabase não está
-       configurado). Troque aqui se quiser. Com Supabase conectado,
-       o login real é feito com e-mail + senha do Supabase Auth. */
-    const LOCAL_ADMIN_PASSWORD = '@ana.achadinhos';
-
     const sbReady = /^https:\/\/.+\.supabase\.co$/.test(SUPABASE_URL)
-                 && SUPABASE_ANON_KEY.length > 30
-                 && !SUPABASE_ANON_KEY.includes('COLE_');
+                  && SUPABASE_ANON_KEY.length > 30
+                  && !SUPABASE_ANON_KEY.includes('COLE_');
     const sb = sbReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
-    const LS_KEY = 'home_achadinhos_products_v1';
-    const defaultSamples = [
-      { title: 'Kit Organizador de Geladeira e Armário Transparente 4 Peças', category: 'Organização', price: 'R$ 69,90',
-        image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80',
-        link: 'https://shopee.com.br', description: 'Perfeito para manter sua cozinha organizada e prática.' },
-      { title: 'Luminária Pendente Rústica em Bambu para Sala e Quarto', category: 'Decoração', price: 'R$ 119,90',
-        image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=600&q=80',
-        link: 'https://shopee.com.br', description: 'Dá um toque aconchegante e natural ao ambiente.' },
-      { title: 'Mini Processador de Alimentos Manual com 3 Lâminas', category: 'Cozinha', price: 'R$ 29,90',
-        image: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=600&q=80',
-        link: 'https://shopee.com.br', description: 'Praticidade no preparo de temperos e saladas.' },
-      { title: 'Tapete Antiderrapante Macio para Banheiro e Entrada', category: 'Casa', price: 'R$ 39,90',
-        image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80',
-        link: 'https://shopee.com.br', description: 'Alta absorção e toque super suave.' },
-    ];
 
     let products = [];
     let panelVisible = false;
@@ -286,8 +269,8 @@
     function traduzErro(msg) {
       const m = String(msg || '');
       if (m.includes('Invalid login credentials')) return 'E-mail ou senha incorretos.';
-      if (m.includes('relation "products" does not exist')) return 'A tabela "products" ainda não foi criada no Supabase (rode o SQL do tutorial).';
-      if (m.includes('row-level security')) return 'A política de segurança bloqueou a ação. Faça login novamente.';
+      if (m.includes('relation "products" does not exist')) return 'A tabela "products" ainda não foi criada no Supabase.';
+      if (m.includes('row-level security')) return 'A política de segurança bloqueou a ação. Verifique as regras RLS.';
       return m;
     }
 
@@ -325,21 +308,22 @@
       const btn = document.getElementById('login-btn');
       const email = val('login-email');
       const password = document.getElementById('login-password').value;
+      
+      if (!sb) {
+        showToast('Erro', 'Supabase não configurado.', 'error');
+        return;
+      }
+
       setLoading(btn, true, 'Entrando...');
       try {
-        if (sb) {
-          const { error } = await sb.auth.signInWithPassword({ email, password });
-          if (error) { showToast('Não foi possível entrar', traduzErro(error.message), 'error'); return; }
-          /* onAuthStateChange exibe o painel */
-        } else {
-          if (password === LOCAL_ADMIN_PASSWORD) {
-            sessionStorage.setItem('ha_admin_ok', '1');
-            showPanel();
-          } else {
-            showToast('Senha incorreta', 'Confira a senha do administrador.', 'error');
-          }
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) { 
+          showToast('Não foi possível entrar', traduzErro(error.message), 'error'); 
         }
-      } finally { setLoading(btn, false); }
+        /* onAuthStateChange exibe o painel automaticamente se der certo */
+      } finally { 
+        setLoading(btn, false); 
+      }
     }
 
     function showPanel() {
@@ -352,40 +336,34 @@
 
     function showLogin() {
       panelVisible = false;
-      sessionStorage.removeItem('ha_admin_ok');
       document.getElementById('panel-screen').classList.add('hidden');
       document.getElementById('login-screen').classList.remove('hidden');
       document.getElementById('login-password').value = '';
     }
 
     async function logout() {
-      if (sb) { await sb.auth.signOut(); } /* onAuthStateChange cuida do resto */
-      else showLogin();
+      if (sb) { 
+        await sb.auth.signOut(); 
+      }
+      showLogin();
     }
 
     /* ---------- carregar produtos ---------- */
     async function loadProducts() {
-      if (sb) {
-        const { data, error } = await sb.from('products').select('*').order('created_at', { ascending: false });
-        if (error) {
-          products = [];
-          renderList();
-          showToast('Erro ao carregar', traduzErro(error.message), 'error');
-          return;
-        }
-        products = data.map(r => ({
-          id: String(r.id), title: r.title, category: r.category, price: r.price || '',
-          image: r.image, link: r.link, description: r.description || '', createdAt: r.created_at,
-        }));
-      } else {
-        const stored = localStorage.getItem(LS_KEY);
-        if (stored) { try { products = JSON.parse(stored); } catch { products = []; } }
-        else products = [];
+      if (!sb) return;
+      const { data, error } = await sb.from('products').select('*').order('created_at', { ascending: false });
+      if (error) {
+        products = [];
+        renderList();
+        showToast('Erro ao carregar', traduzErro(error.message), 'error');
+        return;
       }
+      products = data.map(r => ({
+        id: String(r.id), title: r.title, category: r.category, price: r.price || '',
+        image: r.image, link: r.link, description: r.description || '', createdAt: r.created_at,
+      }));
       renderList();
     }
-
-    function saveLocal() { localStorage.setItem(LS_KEY, JSON.stringify(products)); }
 
     /* ---------- renderização ---------- */
     let io;
@@ -438,6 +416,7 @@
     /* ---------- CRUD ---------- */
     async function saveProduct(e) {
       e.preventDefault();
+      if (!sb) return;
       const id = document.getElementById('product-id').value;
       const payload = {
         title: val('form-title'), category: val('form-category'), image: val('form-image'),
@@ -446,24 +425,14 @@
       const btn = document.getElementById('submit-btn');
       setLoading(btn, true, 'Salvando...');
       try {
-        if (sb) {
-          if (id) {
-            const { error } = await sb.from('products').update(payload).eq('id', Number(id));
-            if (error) throw error;
-          } else {
-            const { error } = await sb.from('products').insert(payload);
-            if (error) throw error;
-          }
-          showToast(id ? 'Produto atualizado!' : 'Produto cadastrado!', 'Ele já está visível na vitrine pública.', 'check');
+        if (id) {
+          const { error } = await sb.from('products').update(payload).eq('id', Number(id));
+          if (error) throw error;
         } else {
-          if (id) {
-            products = products.map(p => p.id === id ? { ...p, ...payload } : p);
-          } else {
-            products.unshift({ id: String(Date.now()), createdAt: new Date().toISOString(), ...payload });
-          }
-          saveLocal();
-          showToast(id ? 'Produto atualizado!' : 'Produto cadastrado!', 'Salvo neste navegador (modo local).', 'check');
+          const { error } = await sb.from('products').insert(payload);
+          if (error) throw error;
         }
+        showToast(id ? 'Produto atualizado!' : 'Produto cadastrado!', 'Ele já está visível na vitrine pública.', 'check');
         resetForm();
         await loadProducts();
       } catch (err) {
@@ -503,13 +472,9 @@
     function askDelete(id) {
       const p = products.find(x => String(x.id) === String(id));
       askConfirm('Excluir produto?', `"${p ? p.title : 'este produto'}" será removido da vitrine. Essa ação não pode ser desfeita.`, async () => {
-        if (sb) {
-          const { error } = await sb.from('products').delete().eq('id', Number(id));
-          if (error) { showToast('Erro ao excluir', traduzErro(error.message), 'error'); return; }
-        } else {
-          products = products.filter(x => String(x.id) !== String(id));
-          saveLocal();
-        }
+        if (!sb) return;
+        const { error } = await sb.from('products').delete().eq('id', Number(id));
+        if (error) { showToast('Erro ao excluir', traduzErro(error.message), 'error'); return; }
         await loadProducts();
         showToast('Produto removido', 'O item foi excluído com sucesso.', 'check');
       });
@@ -517,17 +482,28 @@
 
     function loadSamples() {
       askConfirm('Carregar produtos de exemplo?', 'Serão adicionados 4 achadinhos de exemplo à vitrine. Você pode editá-los ou excluí-los depois.', async () => {
-        if (sb) {
-          const { error } = await sb.from('products').insert(defaultSamples);
-          if (error) { showToast('Erro', traduzErro(error.message), 'error'); return; }
-        } else {
-          products = defaultSamples.map((p, i) => ({ ...p, id: String(Date.now() + i), createdAt: new Date(Date.now() - i * 86400000).toISOString() }));
-          saveLocal();
-        }
+        if (!sb) return;
+        const { error } = await sb.from('products').insert(defaultSamples);
+        if (error) { showToast('Erro', traduzErro(error.message), 'error'); return; }
         await loadProducts();
         showToast('Exemplos carregados!', 'Os produtos de exemplo já estão na vitrine.', 'check');
       }, 'Adicionar', 'fa-box-open', 'bg-brand-sageLight text-brand-sage');
     }
+
+    const defaultSamples = [
+      { title: 'Kit Organizador de Geladeira e Armário Transparente 4 Peças', category: 'Organização', price: 'R$ 69,90',
+        image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80',
+        link: 'https://shopee.com.br', description: 'Perfeito para manter sua cozinha organizada e prática.' },
+      { title: 'Luminária Pendente Rústica em Bambu para Sala e Quarto', category: 'Decoração', price: 'R$ 119,90',
+        image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=600&q=80',
+        link: 'https://shopee.com.br', description: 'Dá um toque aconchegante e natural ao ambiente.' },
+      { title: 'Mini Processador de Alimentos Manual com 3 Lâminas', category: 'Cozinha', price: 'R$ 29,90',
+        image: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=600&q=80',
+        link: 'https://shopee.com.br', description: 'Praticidade no preparo de temperos e saladas.' },
+      { title: 'Tapete Antiderrapante Macio para Banheiro e Entrada', category: 'Casa', price: 'R$ 39,90',
+        image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80',
+        link: 'https://shopee.com.br', description: 'Alta absorção e toque super suave.' },
+    ];
 
     /* ---------- modal de confirmação ---------- */
     function askConfirm(title, msg, cb, okLabel = 'Excluir', icon = 'fa-trash-can', iconCls = 'bg-red-50 text-red-500') {
@@ -575,38 +551,28 @@
       document.getElementById('image-preview-wrap').classList.add('hidden');
     });
 
-    /* ---------- inicialização ---------- */
-    function configureLoginUI() {
-      const emailField = document.getElementById('email-field');
-      const emailInput = document.getElementById('login-email');
-      const note = document.getElementById('login-mode-note');
-      const badge = document.getElementById('mode-badge');
-      if (sb) {
-        emailField.classList.remove('hidden');
-        emailInput.disabled = false;
-        note.textContent = 'Entre com o e-mail e a senha criados no painel do Supabase (Authentication > Users).';
-        badge.className = 'hidden sm:inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full bg-brand-sageLight text-brand-sage';
-        badge.innerHTML = '<i class="fa-solid fa-database text-[9px]"></i> Supabase conectado';
-      } else {
-        emailField.classList.add('hidden');
-        emailInput.disabled = true;
-        note.innerHTML = 'Modo local ativo — a senha padrão é <b>admin123</b> (constante LOCAL_ADMIN_PASSWORD).<br />Conecte o Supabase para um login seguro de verdade.';
-        badge.className = 'hidden sm:inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full bg-brand-yellowAccent/30 text-yellow-800';
-        badge.innerHTML = '<i class="fa-solid fa-circle-info text-[9px]"></i> Modo local';
-      }
-    }
-
+    /* ---------- inicialização e segurança ---------- */
     window.addEventListener('DOMContentLoaded', async () => {
-      configureLoginUI();
       if (sb) {
+        // Verifica se já existe sessão ativa ao carregar a página
         const { data: { session } } = await sb.auth.getSession();
-        if (session) showPanel();
+        if (session) {
+          showPanel();
+        } else {
+          showLogin();
+        }
+
+        // Monitora mudanças de autenticação em tempo real
         sb.auth.onAuthStateChange((evt, session) => {
-          if (evt === 'SIGNED_OUT') showLogin();
-          else if (session) showPanel();
+          if (evt === 'SIGNED_OUT' || !session) {
+            showLogin();
+          } else if (session) {
+            showPanel();
+          }
         });
-      } else if (sessionStorage.getItem('ha_admin_ok') === '1') {
-        showPanel();
+      } else {
+        showLogin();
+        showToast('Atenção', 'Supabase não inicializado corretamente.', 'error');
       }
     });
   </script>
