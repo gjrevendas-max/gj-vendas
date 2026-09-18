@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home Achadinhos — Achados de casa na Shopee</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Cliente do Supabase via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              terracotta: '#C85A32', terracottaDark: '#A84521',
+              sage: '#7A9A75', sageLight: '#EAF0E9',
+              cream: '#FBF9F5', creamCard: '#F4EFE6', yellowAccent: '#F3C65F',
+            },
+          },
+          fontFamily: {
+            display: ['Fraunces', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    html { scroll-behavior: smooth; }
+
+    /* ============ Animações ============ */
+    @keyframes floatA { 0%,100%{transform:translate(0,0) rotate(0)} 50%{transform:translate(20px,-24px) rotate(10deg)} }
+    @keyframes floatB { 0%,100%{transform:translate(0,0) rotate(0)} 50%{transform:translate(-24px,16px) rotate(-12deg)} }
+    @keyframes floatC { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(12px,20px) scale(1.1)} }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(28px)} to{opacity:1;transform:none} }
+    @keyframes marquee { to{transform:translateX(-50%)} }
+    @keyframes pulseDot { 0%{box-shadow:0 0 0 0 rgba(122,154,117,.55)} 70%{box-shadow:0 0 0 9px rgba(122,154,117,0)} 100%{box-shadow:0 0 0 0 rgba(122,154,117,0)} }
+    @keyframes shimmer { to{transform:translateX(100%)} }
+    @keyframes softBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+    .float-a { animation: floatA 11s ease-in-out infinite; }
+    .float-b { animation: floatB 13s ease-in-out infinite; }
+    .float-c { animation: floatC 9s ease-in-out infinite; }
+
+    /* Entrada escalonada do hero */
+    .hero-in { opacity:0; animation: fadeUp .9s cubic-bezier(.16,1,.3,1) forwards; }
+    .d1{animation-delay:.05s} .d2{animation-delay:.15s} .d3{animation-delay:.25s}
+    .d4{animation-delay:.4s} .d5{animation-delay:.55s}
+
+    /* Revelar ao rolar */
+    .reveal { opacity:0; transform:translateY(26px); transition:opacity .7s ease, transform .7s cubic-bezier(.16,1,.3,1); }
+    .reveal.is-visible { opacity:1; transform:none; }
+
+    /* Faixa animada de avisos */
+    .marquee-track { display:flex; width:max-content; animation: marquee 30s linear infinite; }
+    .marquee-wrap:hover .marquee-track { animation-play-state:paused; }
+
+    .live-dot { animation: pulseDot 2.2s infinite; }
+    .empty-bounce { animation: softBounce 2.6s ease-in-out infinite; }
+
+    /* Skeleton de carregamento (efeito "shimmer") */
+    .skeleton { position:relative; overflow:hidden; background:#EDE7DB; }
+    .skeleton::after { content:''; position:absolute; inset:0; transform:translateX(-100%);
+      background:linear-gradient(90deg, transparent, rgba(255,255,255,.8), transparent);
+      animation: shimmer 1.4s infinite; }
+
+    /* Interações dos cards */
+    .product-card { transition: transform .45s cubic-bezier(.16,1,.3,1), box-shadow .45s ease; }
+    .product-card:hover { transform: translateY(-8px); }
+    .card-img { transition: transform .8s cubic-bezier(.16,1,.3,1); }
+    .product-card:hover .card-img { transform: scale(1.07); }
+    .card-btn i { transition: transform .3s ease; }
+    .card-btn:hover i { transform: translate(2px,-2px); }
+
+    .cat-pill { transition: all .35s cubic-bezier(.16,1,.3,1); }
+    .cat-pill:active { transform: scale(.93); }
+
+    .scrollbar-none::-webkit-scrollbar { display:none; }
+    .scrollbar-none { scrollbar-width:none; }
+  </style>
+</head>
+
+<body class="bg-brand-cream text-gray-800 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- Faixa animada de avisos -->
+  <div class="marquee-wrap bg-brand-terracotta text-white overflow-hidden">
+    <div class="marquee-track py-1.5 text-[11px] font-bold tracking-wide uppercase">
+      <span class="flex items-center whitespace-nowrap">
+        <i class="fa-solid fa-bolt text-brand-yellowAccent mx-3"></i> Novos achadinhos toda semana
+        <span class="mx-3 opacity-50">•</span>
+        <i class="fa-solid fa-tags mx-0"></i><span class="ml-2">Ofertas por tempo limitado
+        <span class="mx-3 opacity-50">•</span>
+        <i class="fa-solid fa-truck-fast"></i><span class="ml-2">Fique de olho nos fretes grátis
+        <span class="mx-3 opacity-50">•</span>
+        <i class="fa-solid fa-heart text-brand-yellowAccent"></i><span class="ml-2">Curadoria @home.achadinhos.br
+      </span>
+      <span aria-hidden="true" class="flex items-center whitespace-nowrap">
+        <i class="fa-solid fa-bolt text-brand-yellowAccent mx-3"></i> Novos achadinhos toda semana
+        <span class="mx-3 opacity-50">•</span>
+        <i class="fa-solid fa-tags mx-0"></i><span class="ml-2">Ofertas por tempo limitado
+        <span class="mx-3 opacity-50">•</span>
+        <i class="fa-solid fa-truck-fast"></i><span class="ml-2">Fique de olho nos fretes grátis
+        <span class="mx-3 opacity-50">•</span>
+        <i class="fa-solid fa-heart text-brand-yellowAccent"></i><span class="ml-2">Curadoria @home.achadinhos.br
+      </span>
+    </div>
+  </div>
+
+  <!-- Cabeçalho -->
+  <header id="site-header" class="bg-white/85 backdrop-blur-md sticky top-0 z-40 border-b border-brand-creamCard transition-shadow duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-[72px] flex items-center justify-between">
+      <a href="#" class="flex items-center space-x-3 group">
+        <div class="w-11 h-11 rounded-2xl bg-brand-sageLight border border-brand-sage/40 flex items-center justify-center text-brand-terracotta group-hover:rotate-6 transition-transform duration-300">
+          <i class="fa-solid fa-house-chimney text-lg"></i>
+        </div>
+        <div>
+          <h1 class="font-display font-bold text-lg sm:text-xl tracking-tight text-brand-terracotta leading-none">HOME ACHADINHOS</h1>
+          <p class="text-[11px] text-brand-sage font-semibold mt-0.5">@home.achadinhos.br</p>
+        </div>
+      </a>
+
+      <button onclick="shareStore()" class="bg-white hover:bg-brand-creamCard border border-brand-creamCard text-gray-700 px-4 py-2.5 rounded-2xl text-xs font-bold shadow-sm transition-all hover:-translate-y-0.5 active:scale-95 flex items-center gap-2">
+        <i class="fa-solid fa-share-nodes text-brand-sage"></i>
+        <span class="hidden sm:inline">Compartilhar</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-grow">
+
+    <!-- ============ HERO ============ -->
+    <section class="relative overflow-hidden">
+      <!-- Formas flutuantes de fundo -->
+      <div class="absolute -right-16 -bottom-20 w-72 h-72 rounded-full bg-brand-sageLight float-a pointer-events-none"></div>
+      <div class="absolute -left-16 -top-16 w-56 h-56 rounded-full bg-brand-creamCard float-b pointer-events-none"></div>
+      <div class="absolute right-1/4 top-10 w-16 h-16 rounded-full bg-brand-yellowAccent/40 float-c pointer-events-none"></div>
+      <div class="absolute left-1/4 bottom-10 w-10 h-10 rounded-full bg-brand-sage/25 float-a pointer-events-none" style="animation-delay:-4s"></div>
+
+      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 text-center">
+        <div class="hero-in d1 inline-flex items-center gap-2 bg-white border border-brand-creamCard rounded-full px-4 py-1.5 text-xs font-bold text-brand-sage shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-brand-sage live-dot"></span>
+          <span>Curadoria diária de ofertas da Shopee</span>
+        </div>
+
+        <h2 class="hero-in d2 font-display font-black text-3xl sm:text-5xl lg:text-[3.4rem] tracking-tight text-gray-900 leading-[1.08] mt-6 max-w-3xl mx-auto">
+          Tudo pra sua casa com
+          <em class="text-brand-terracotta">preço de achadinho.</em>
+        </h2>
+
+        <p class="hero-in d3 text-gray-600 text-sm sm:text-base max-w-xl mx-auto mt-5 leading-relaxed">
+          Selecionamos à mão organizadores, decoração e utilidades domésticas que valem cada centavo.
+          Clique, confira e garanta o seu antes de acabar.
+        </p>
+
+        <div class="hero-in d4 flex flex-wrap justify-center gap-3 mt-8">
+          <a href="#vitrine" class="bg-brand-terracotta hover:bg-brand-terracottaDark text-white px-6 py-3.5 rounded-2xl text-sm font-bold shadow-lg shadow-brand-terracotta/20 transition-all hover:-translate-y-0.5 active:scale-95 flex items-center gap-2">
+            <i class="fa-solid fa-bag-shopping"></i> Ver os achadinhos
+          </a>
+          <button onclick="shareStore()" class="bg-white hover:bg-brand-creamCard text-gray-800 border border-brand-creamCard px-6 py-3.5 rounded-2xl text-sm font-bold shadow-sm transition-all hover:-translate-y-0.5 active:scale-95 flex items-center gap-2">
+            <i class="fa-solid fa-share-nodes text-brand-sage"></i> Compartilhar vitrine
+          </button>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="hero-in d5 mt-10 max-w-xl mx-auto bg-white border border-brand-creamCard rounded-2xl shadow-sm grid grid-cols-3 divide-x divide-brand-creamCard overflow-hidden">
+          <div class="py-4 px-2">
+            <div class="font-display text-2xl sm:text-3xl font-bold text-brand-terracotta"><span id="stat-count">0</span></div>
+            <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-gray-500 mt-0.5">achadinhos</div>
+          </div>
+          <div class="py-4 px-2">
+            <div class="font-display text-2xl sm:text-3xl font-bold text-brand-sage"><span id="stat-categories">0</span></div>
+            <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-gray-500 mt-0.5">categorias</div>
+          </div>
+          <div class="py-4 px-2">
+            <div class="font-display text-2xl sm:text-3xl font-bold text-gray-800" id="stat-updated">—</div>
+            <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-gray-500 mt-0.5">atualizado em</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ VITRINE ============ -->
+    <section id="vitrine" class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-8">
+
+      <!-- Busca + filtros -->
+      <div class="space-y-4">
+        <div class="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between">
+          <div class="relative w-full sm:w-96 group">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400 group-focus-within:text-brand-terracotta transition-colors">
+              <i class="fa-solid fa-search text-sm"></i>
+            </span>
+            <input type="text" id="search-input" oninput="onSearch()" placeholder="Buscar achadinhos..."
+              class="w-full pl-11 pr-10 py-3.5 bg-white border border-brand-creamCard rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-terracotta/30 focus:border-brand-terracotta shadow-sm transition" />
+            <button id="clear-search" onclick="clearSearch()" class="hidden absolute inset-y-0 right-0 items-center pr-4 text-gray-400 hover:text-brand-terracotta transition">
+              <i class="fa-solid fa-circle-xmark"></i>
+            </button>
+          </div>
+          <p class="text-xs text-gray-400 font-semibold hidden sm:block" id="results-hint"></p>
+        </div>
+        <div id="category-filters" class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none"></div>
+      </div>
+
+      <!-- Aviso de erro do Supabase -->
+      <div id="supabase-warning" class="hidden bg-yellowAccent/25 border border-yellowAccent/60 text-yellow-800 rounded-2xl p-4 sm:p-5 text-sm space-y-1">
+        <p class="font-bold flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation"></i> Não consegui carregar os dados do Supabase</p>
+        <p class="text-xs leading-relaxed" id="supabase-warning-msg"></p>
+      </div>
+
+      <!-- Grade de produtos -->
+      <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+
+      <!-- Estado vazio -->
+      <div id="empty-catalog" class="hidden text-center py-16 bg-white rounded-3xl border border-dashed border-brand-creamCard p-8 space-y-4 shadow-sm">
+        <div class="empty-bounce w-16 h-16 bg-brand-sageLight text-brand-sage rounded-full flex items-center justify-center text-2xl mx-auto">
+          <i class="fa-solid fa-box-open"></i>
+        </div>
+        <h3 class="font-display text-xl font-bold text-gray-800">Nenhum achadinho por aqui</h3>
+        <p class="text-gray-500 text-sm max-w-sm mx-auto">Não encontramos produtos para esta busca. Limpe os filtros ou volte em breve — novidades entram toda semana!</p>
+        <button onclick="clearFilters()" class="inline-flex items-center gap-2 bg-brand-terracotta text-white px-5 py-3 rounded-xl text-sm font-bold hover:bg-brand-terracottaDark transition shadow-md shadow-brand-terracotta/20">
+          <i class="fa-solid fa-rotate-right text-xs"></i> Limpar filtros
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Rodapé -->
+  <footer class="bg-white border-t border-brand-creamCard py-8 mt-10 text-center text-xs text-gray-500">
+    <div class="max-w-7xl mx-auto px-4 space-y-3">
+      <div class="flex items-center justify-center gap-2 text-brand-terracotta font-extrabold text-sm">
+        <i class="fa-solid fa-house-chimney"></i>
+        <span>HOME ACHADINHOS (@home.achadinhos.br)</span>
+      </div>
+      <p>© 2026 Todos os direitos reservados.</p>
+      <p class="text-gray-400 max-w-lg mx-auto">Participamos do programa de afiliados da Shopee. Podemos receber comissões por compras realizadas através dos links indicados.</p>
+      <p id="source-badge" class="text-gray-400 text-[11px] pt-1 border-t border-brand-creamCard max-w-lg mx-auto"></p>
+      <a href="admin.html" class="inline-flex items-center gap-1.5 text-gray-300 hover:text-brand-terracotta transition-colors font-semibold text-[11px]">
+        <i class="fa-solid fa-lock text-[10px]"></i> Área administrativa
+      </a>
+    </div>
+  </footer>
+
+  <!-- Toast (notificação flutuante) -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 translate-y-6 transition-all duration-500">
+    <div class="bg-gray-900/95 text-white rounded-2xl px-5 py-3.5 shadow-2xl flex items-center gap-3 max-w-sm">
+      <span id="toast-icon" class="w-8 h-8 rounded-full bg-brand-sage flex items-center justify-center text-sm shrink-0"><i class="fa-solid fa-check"></i></span>
+      <div class="text-left">
+        <p id="toast-title" class="text-sm font-bold"></p>
+        <p id="toast-msg" class="text-xs text-white/70"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ================================================================
+       CONFIGURAÇÃO DO SUPABASE
+       Cole aqui as chaves do SEU projeto (painel do Supabase:
+       Settings > API > "Project URL" e "anon public").
+       Enquanto não configurar, o site roda em MODO LOCAL (localStorage)
+       e você já pode testar tudo normalmente.
+    ================================================================ */
+    const SUPABASE_URL     = 'https://SEU-PROJETO.supabase.co';
+    const SUPABASE_ANON_KEY = 'COLE_SUA_ANON_KEY_AQUI';
+
+    const sbReady = /^https:\/\/.+\.supabase\.co$/.test(SUPABASE_URL)
+                 && SUPABASE_ANON_KEY.length > 30
+                 && !SUPABASE_ANON_KEY.includes('COLE_');
+    const sb = sbReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+    const LS_KEY = 'home_achadinhos_products_v1';
+
+    const defaultProducts = [
+      { title: 'Kit Organizador de Geladeira e Armário Transparente 4 Peças', category: 'Organização', price: 'R$ 69,90',
+        image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80',
+        link: 'https://shopee.com.br', description: 'Perfeito para manter sua cozinha organizada e prática.' },
+      { title: 'Luminária Pendente Rústica em Bambu para Sala e Quarto', category: 'Decoração', price: 'R$ 119,90',
+        image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=600&q=80',
+        link: 'https://shopee.com.br', description: 'Dá um toque aconchegante e natural ao ambiente.' },
+      { title: 'Mini Processador de Alimentos Manual com 3 Lâminas', category: 'Cozinha', price: 'R$ 29,90',
+        image: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=600&q=80',
+        link: 'https://shopee.com.br', description: 'Praticidade no preparo de temperos e saladas.' },
+      { title: 'Tapete Antiderrapante Macio para Banheiro e Entrada', category: 'Casa', price: 'R$ 39,90',
+        image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80',
+        link: 'https://shopee.com.br', description: 'Alta absorção e toque super suave.' },
+    ];
+
+    let products = [];
+    let currentCategory = 'Todos';
+    let statsAnimated = false;
+
+    /* ---------- utilitários ---------- */
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const fmtDate = iso => { if (!iso) return '—'; const d = new Date(iso); return isNaN(d) ? '—' : d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }); };
+
+    function seedLocal() {
+      const seeded = defaultProducts.map((p, i) => ({ ...p, id: String(i + 1), createdAt: new Date(Date.now() - i * 86400000).toISOString() }));
+      localStorage.setItem(LS_KEY, JSON.stringify(seeded));
+      return seeded;
+    }
+
+    /* ---------- carregamento dos produtos ---------- */
+    async function loadProducts() {
+      renderSkeletons(8);
+      if (sb) {
+        const { data, error } = await sb.from('products').select('*').order('created_at', { ascending: false });
+        const warn = document.getElementById('supabase-warning');
+        if (error) {
+          document.getElementById('supabase-warning-msg').textContent =
+            'Detalhe: ' + error.message + ' — confira se a tabela "products" foi criada (SQL do tutorial) e se as chaves estão corretas.';
+          warn.classList.remove('hidden');
+          products = [];
+        } else {
+          warn.classList.add('hidden');
+          products = data.map(r => ({
+            id: String(r.id), title: r.title, category: r.category, price: r.price || '',
+            image: r.image, link: r.link, description: r.description || '', createdAt: r.created_at,
+          }));
+        }
+      } else {
+        const stored = localStorage.getItem(LS_KEY);
+        if (stored) { try { products = JSON.parse(stored); } catch { products = seedLocal(); } }
+        else products = seedLocal();
+      }
+      updateStats();
+      renderCatalog();
+      updateSourceBadge();
+    }
+
+    function updateSourceBadge() {
+      const el = document.getElementById('source-badge');
+      el.innerHTML = sb
+        ? '<i class="fa-solid fa-database text-brand-sage mr-1"></i> Conectado ao Supabase — dados em tempo real.'
+        : '<i class="fa-solid fa-circle-info text-brand-yellowAccent mr-1"></i> Modo demonstração: os dados ficam salvos apenas neste navegador (configure o Supabase para publicar).';
+    }
+
+    /* ---------- skeletons ---------- */
+    function renderSkeletons(n) {
+      document.getElementById('products-grid').innerHTML = Array.from({ length: n }, () => `
+        <div class="bg-white rounded-3xl border border-brand-creamCard shadow-sm overflow-hidden">
+          <div class="skeleton w-full pt-[100%]"></div>
+          <div class="p-5 space-y-3">
+            <div class="skeleton h-4 rounded-full w-11/12"></div>
+            <div class="skeleton h-3 rounded-full w-2/3"></div>
+            <div class="skeleton h-9 rounded-2xl w-full mt-4"></div>
+          </div>
+        </div>`).join('');
+    }
+
+    /* ---------- estatísticas ---------- */
+    function animateCount(el, target) {
+      let start = null; const dur = 900;
+      function step(t) {
+        if (!start) start = t;
+        const p = Math.min((t - start) / dur, 1);
+        el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+        if (p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    function updateStats() {
+      const total = products.length;
+      const cats = new Set(products.map(p => p.category)).size;
+      const latest = products.reduce((m, p) => (p.createdAt && (!m || p.createdAt > m)) ? p.createdAt : m, null);
+      if (!statsAnimated && total > 0) {
+        animateCount(document.getElementById('stat-count'), total);
+        animateCount(document.getElementById('stat-categories'), cats);
+        statsAnimated = true;
+      } else {
+        document.getElementById('stat-count').textContent = total;
+        document.getElementById('stat-categories').textContent = cats;
+      }
+      document.getElementById('stat-updated').textContent = total ? fmtDate(latest) : '—';
+    }
+
+    /* ---------- renderização ---------- */
+    let io;
+    function observeReveals() {
+      if (!io) io = new IntersectionObserver(entries => {
+        entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add('is-visible'); io.unobserve(en.target); } });
+      }, { threshold: .1 });
+      document.querySelectorAll('.reveal:not(.is-visible)').forEach(el => io.observe(el));
+    }
+
+    function renderCatalog() {
+      const grid = document.getElementById('products-grid');
+      const empty = document.getElementById('empty-catalog');
+      const q = document.getElementById('search-input').value.toLowerCase().trim();
+
+      const filtered = products.filter(p => {
+        const matchesCat = currentCategory === 'Todos' || p.category.toLowerCase() === currentCategory.toLowerCase();
+        const matchesSearch = !q || p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q);
+        return matchesCat && matchesSearch;
+      });
+
+      renderCategoryFilters(filtered.length);
+      document.getElementById('results-hint').textContent = q || currentCategory !== 'Todos'
+        ? `${filtered.length} de ${products.length} achadinhos`
+        : `${products.length} achadinhos disponíveis`;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      grid.innerHTML = filtered.map((p, i) => `
+        <article class="product-card reveal bg-white rounded-3xl border border-brand-creamCard shadow-sm hover:shadow-xl flex flex-col overflow-hidden" style="transition-delay:${Math.min(i, 7) * 60}ms">
+          <div class="relative w-full pt-[100%] bg-brand-creamCard overflow-hidden">
+            <img src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy"
+                 onerror="this.onerror=null;this.src='https://placehold.co/600x600/FBF9F5/C85A32?text=Home+Achadinhos';"
+                 class="card-img absolute inset-0 w-full h-full object-cover" />
+            <span class="absolute top-3 left-3 bg-brand-terracotta text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-md">${esc(p.category)}</span>
+          </div>
+          <div class="p-5 flex-grow flex flex-col justify-between gap-4">
+            <div class="space-y-1.5">
+              <h3 class="font-bold text-gray-900 text-sm leading-snug line-clamp-2" title="${esc(p.title)}">${esc(p.title)}</h3>
+              ${p.description ? `<p class="text-xs text-gray-500 line-clamp-1">${esc(p.description)}</p>` : ''}
+            </div>
+            <div class="pt-3 border-t border-brand-creamCard flex items-end justify-between gap-3">
+              <div class="min-w-0">
+                <span class="text-[10px] text-gray-400 block uppercase font-semibold tracking-wider">Preço</span>
+                <span class="font-display font-bold text-brand-terracotta text-lg leading-tight block truncate">${p.price ? esc(p.price) : 'Ver oferta'}</span>
+              </div>
+              <a href="${esc(p.link)}" target="_blank" rel="noopener noreferrer"
+                 class="card-btn bg-brand-sage hover:bg-[#6A8A65] text-white px-4 py-2.5 rounded-2xl text-xs font-bold shadow-md shadow-brand-sage/25 transition-all flex items-center gap-1.5 shrink-0 active:scale-95">
+                <span>Ver na Shopee</span><i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+              </a>
+            </div>
+          </div>
+        </article>`).join('');
+
+      observeReveals();
+    }
+
+    function renderCategoryFilters(filteredCount) {
+      const container = document.getElementById('category-filters');
+      const cats = ['Todos', ...new Set(products.map(p => p.category))];
+      container.innerHTML = cats.map(cat => {
+        const n = cat === 'Todos' ? products.length : products.filter(p => p.category === cat).length;
+        const active = currentCategory.toLowerCase() === cat.toLowerCase();
+        return `<button data-cat="${esc(cat)}"
+          class="cat-pill whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold ${active
+            ? 'bg-brand-terracotta text-white shadow-md shadow-brand-terracotta/20'
+            : 'bg-white text-gray-600 hover:bg-brand-creamCard border border-brand-creamCard'}">
+          ${esc(cat)} <span class="opacity-60 font-semibold ml-0.5">${n}</span>
+        </button>`;
+      }).join('');
+    }
+
+    /* ---------- interações ---------- */
+    document.getElementById('category-filters').addEventListener('click', e => {
+      const btn = e.target.closest('button[data-cat]');
+      if (btn) { currentCategory = btn.dataset.cat; renderCatalog(); }
+    });
+
+    let searchTimer;
+    function onSearch() {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        document.getElementById('clear-search').classList.toggle('hidden', !document.getElementById('search-input').value);
+        document.getElementById('clear-search').classList.toggle('flex', !!document.getElementById('search-input').value);
+        renderCatalog();
+      }, 180);
+    }
+    function clearSearch() {
+      document.getElementById('search-input').value = '';
+      document.getElementById('clear-search').classList.add('hidden');
+      renderCatalog();
+    }
+    function clearFilters() {
+      clearSearch();
+      currentCategory = 'Todos';
+      renderCatalog();
+    }
+
+    async function shareStore() {
+      const url = window.location.href;
+      if (navigator.share) {
+        try { await navigator.share({ title: 'Home Achadinhos', text: 'Confira os achadinhos de casa que selecionei na Shopee:', url }); return; } catch (e) {}
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast('Link copiado!', 'O link da vitrine está na sua área de transferência.', 'check');
+      } catch (e) {
+        showToast('Compartilhar', 'Copie o link: ' + url, 'info');
+      }
+    }
+
+    /* ---------- toast ---------- */
+    let toastTimer;
+    function showToast(title, msg, type = 'check') {
+      const icons = { check: 'fa-check', info: 'fa-circle-info', error: 'fa-triangle-exclamation' };
+      const colors = { check: 'bg-brand-sage', info: 'bg-brand-terracotta', error: 'bg-red-500' };
+      document.getElementById('toast-icon').className = `w-8 h-8 rounded-full ${colors[type]} flex items-center justify-center text-sm shrink-0`;
+      document.getElementById('toast-icon').innerHTML = `<i class="fa-solid ${icons[type]}"></i>`;
+      document.getElementById('toast-title').textContent = title;
+      document.getElementById('toast-msg').textContent = msg;
+      const t = document.getElementById('toast');
+      t.classList.remove('opacity-0', 'translate-y-6');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.add('opacity-0', 'translate-y-6'), 3400);
+    }
+
+    /* sombra do header ao rolar */
+    window.addEventListener('scroll', () => {
+      document.getElementById('site-header').classList.toggle('shadow-md', window.scrollY > 8);
+    }, { passive: true });
+
+    window.addEventListener('DOMContentLoaded', loadProducts);
+  </script>
+</body>
+</html>
