@@ -261,10 +261,6 @@
   <script>
     /* ================================================================
        CONFIGURAÇÃO DO SUPABASE
-       Cole aqui as chaves do SEU projeto (painel do Supabase:
-       Settings > API > "Project URL" e "anon public").
-       Enquanto não configurar, o site roda em MODO LOCAL (localStorage)
-       e você já pode testar tudo normalmente.
     ================================================================ */
     const SUPABASE_URL     = 'https://dfxfhsddymqgvrsqurtw.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmeGZoc2RkeW1xZ3Zyc3F1cnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3NDQzMzQsImV4cCI6MjEwNTMyMDMzNH0.9S9AOILAm0ggT7wdcGPRKO_o--oCZwpkruHgL_8yPFw';
@@ -298,6 +294,8 @@
     /* ---------- utilitários ---------- */
     const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const fmtDate = iso => { if (!iso) return '—'; const d = new Date(iso); return isNaN(d) ? '—' : d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }); };
+    const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+    const setHTML = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
 
     function seedLocal() {
       const seeded = defaultProducts.map((p, i) => ({ ...p, id: String(i + 1), createdAt: new Date(Date.now() - i * 86400000).toISOString() }));
@@ -312,13 +310,13 @@
         const { data, error } = await sb.from('products').select('*').order('created_at', { ascending: false });
         const warn = document.getElementById('supabase-warning');
         if (error) {
-          document.getElementById('supabase-warning-msg').textContent =
-            'Detalhe: ' + error.message + ' — confira se a tabela "products" foi criada (SQL do tutorial) e se as chaves estão corretas.';
-          warn.classList.remove('hidden');
+          setText('supabase-warning-msg', 'Detalhe: ' + error.message + ' — confira se a tabela "products" foi criada (SQL do tutorial) e se as chaves estão corretas.');
+          warn?.classList.remove('hidden');
+          console.error('[loadProducts] erro do Supabase:', error);
           products = [];
         } else {
-          warn.classList.add('hidden');
-          products = data.map(r => ({
+          warn?.classList.add('hidden');
+          products = (data || []).map(r => ({
             id: String(r.id), title: r.title, category: r.category, price: r.price || '',
             image: r.image, link: r.link, description: r.description || '', createdAt: r.created_at,
           }));
@@ -334,14 +332,16 @@
     }
 
     function updateSourceBadge() {
-      const el = document.getElementById('source-badge');
-      el.innerHTML = sb
+      setHTML('source-badge', sb
         ? '<i class="fa-solid fa-database text-brand-sage mr-1"></i> Conectado ao Supabase — dados em tempo real.'
+        : '<i class="fa-solid fa-hard-drive text-gray-400 mr-1"></i> Modo local — configure o Supabase para sincronizar.');
     }
 
     /* ---------- skeletons ---------- */
     function renderSkeletons(n) {
-      document.getElementById('products-grid').innerHTML = Array.from({ length: n }, () => `
+      const grid = document.getElementById('products-grid');
+      if (!grid) return;
+      grid.innerHTML = Array.from({ length: n }, () => `
         <div class="bg-white rounded-3xl border border-brand-creamCard shadow-sm overflow-hidden">
           <div class="skeleton w-full pt-[100%]"></div>
           <div class="p-5 space-y-3">
@@ -354,6 +354,7 @@
 
     /* ---------- estatísticas ---------- */
     function animateCount(el, target) {
+      if (!el) return;
       let start = null; const dur = 900;
       function step(t) {
         if (!start) start = t;
@@ -373,10 +374,10 @@
         animateCount(document.getElementById('stat-categories'), cats);
         statsAnimated = true;
       } else {
-        document.getElementById('stat-count').textContent = total;
-        document.getElementById('stat-categories').textContent = cats;
+        setText('stat-count', total);
+        setText('stat-categories', cats);
       }
-      document.getElementById('stat-updated').textContent = total ? fmtDate(latest) : '—';
+      setText('stat-updated', total ? fmtDate(latest) : '—');
     }
 
     /* ---------- renderização ---------- */
@@ -391,7 +392,8 @@
     function renderCatalog() {
       const grid = document.getElementById('products-grid');
       const empty = document.getElementById('empty-catalog');
-      const q = document.getElementById('search-input').value.toLowerCase().trim();
+      const q = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
+      if (!grid) return;
 
       const filtered = products.filter(p => {
         const matchesCat = currentCategory === 'Todos' || p.category.toLowerCase() === currentCategory.toLowerCase();
@@ -400,16 +402,16 @@
       });
 
       renderCategoryFilters(filtered.length);
-      document.getElementById('results-hint').textContent = q || currentCategory !== 'Todos'
+      setText('results-hint', q || currentCategory !== 'Todos'
         ? `${filtered.length} de ${products.length} achadinhos`
-        : `${products.length} achadinhos disponíveis`;
+        : `${products.length} achadinhos disponíveis`);
 
       if (filtered.length === 0) {
         grid.innerHTML = '';
-        empty.classList.remove('hidden');
+        empty?.classList.remove('hidden');
         return;
       }
-      empty.classList.add('hidden');
+      empty?.classList.add('hidden');
 
       grid.innerHTML = filtered.map((p, i) => `
         <article class="product-card reveal bg-white rounded-3xl border border-brand-creamCard shadow-sm hover:shadow-xl flex flex-col overflow-hidden" style="transition-delay:${Math.min(i, 7) * 60}ms">
@@ -442,6 +444,7 @@
 
     function renderCategoryFilters(filteredCount) {
       const container = document.getElementById('category-filters');
+      if (!container) return;
       const cats = ['Todos', ...new Set(products.map(p => p.category))];
       container.innerHTML = cats.map(cat => {
         const n = cat === 'Todos' ? products.length : products.filter(p => p.category === cat).length;
@@ -456,7 +459,7 @@
     }
 
     /* ---------- interações ---------- */
-    document.getElementById('category-filters').addEventListener('click', e => {
+    document.getElementById('category-filters')?.addEventListener('click', e => {
       const btn = e.target.closest('button[data-cat]');
       if (btn) { currentCategory = btn.dataset.cat; renderCatalog(); }
     });
@@ -465,14 +468,16 @@
     function onSearch() {
       clearTimeout(searchTimer);
       searchTimer = setTimeout(() => {
-        document.getElementById('clear-search').classList.toggle('hidden', !document.getElementById('search-input').value);
-        document.getElementById('clear-search').classList.toggle('flex', !!document.getElementById('search-input').value);
+        const hasVal = !!document.getElementById('search-input')?.value;
+        document.getElementById('clear-search')?.classList.toggle('hidden', !hasVal);
+        document.getElementById('clear-search')?.classList.toggle('flex', hasVal);
         renderCatalog();
       }, 180);
     }
     function clearSearch() {
-      document.getElementById('search-input').value = '';
-      document.getElementById('clear-search').classList.add('hidden');
+      const s = document.getElementById('search-input');
+      if (s) s.value = '';
+      document.getElementById('clear-search')?.classList.add('hidden');
       renderCatalog();
     }
     function clearFilters() {
@@ -499,11 +504,15 @@
     function showToast(title, msg, type = 'check') {
       const icons = { check: 'fa-check', info: 'fa-circle-info', error: 'fa-triangle-exclamation' };
       const colors = { check: 'bg-brand-sage', info: 'bg-brand-terracotta', error: 'bg-red-500' };
-      document.getElementById('toast-icon').className = `w-8 h-8 rounded-full ${colors[type]} flex items-center justify-center text-sm shrink-0`;
-      document.getElementById('toast-icon').innerHTML = `<i class="fa-solid ${icons[type]}"></i>`;
-      document.getElementById('toast-title').textContent = title;
-      document.getElementById('toast-msg').textContent = msg;
+      const iconEl = document.getElementById('toast-icon');
+      const titleEl = document.getElementById('toast-title');
+      const msgEl = document.getElementById('toast-msg');
       const t = document.getElementById('toast');
+      if (!iconEl || !titleEl || !msgEl || !t) return;
+      iconEl.className = `w-8 h-8 rounded-full ${colors[type]} flex items-center justify-center text-sm shrink-0`;
+      iconEl.innerHTML = `<i class="fa-solid ${icons[type]}"></i>`;
+      titleEl.textContent = title;
+      msgEl.textContent = msg;
       t.classList.remove('opacity-0', 'translate-y-6');
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => t.classList.add('opacity-0', 'translate-y-6'), 3400);
@@ -511,7 +520,7 @@
 
     /* sombra do header ao rolar */
     window.addEventListener('scroll', () => {
-      document.getElementById('site-header').classList.toggle('shadow-md', window.scrollY > 8);
+      document.getElementById('site-header')?.classList.toggle('shadow-md', window.scrollY > 8);
     }, { passive: true });
 
     window.addEventListener('DOMContentLoaded', loadProducts);
