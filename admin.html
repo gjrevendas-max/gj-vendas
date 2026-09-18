@@ -247,7 +247,7 @@
 
   <script>
     /* ================================================================
-        CONFIGURAÇÃO DO SUPABASE — URL corrigida sem o /rest/v1/
+        CONFIGURAÇÃO DO SUPABASE
     ================================================================ */
     const SUPABASE_URL      = 'https://dfxfhsddymqgvrsqurtw.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmeGZoc2RkeW1xZ3Zyc3F1cnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3NDQzMzQsImV4cCI6MjEwNTMyMDMzNH0.9S9AOILAm0ggT7wdcGPRKO_o--oCZwpkruHgL_8yPFw';
@@ -263,8 +263,12 @@
 
     /* ---------- utilitários ---------- */
     const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const val = id => document.getElementById(id).value.trim();
+    const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
     const fmtDate = iso => { if (!iso) return '—'; const d = new Date(iso); return isNaN(d) ? '—' : d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }); };
+    // Helper seguro: só escreve se o elemento existir na página
+    const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+    const setHTML = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+    const setClass = (id, fn) => { const el = document.getElementById(id); if (el) fn(el); };
 
     function traduzErro(msg) {
       const m = String(msg || '');
@@ -275,6 +279,7 @@
     }
 
     function setLoading(btn, on, text = 'Processando...') {
+      if (!btn) return;
       if (on) { btn.dataset.orig = btn.innerHTML; btn.disabled = true; btn.classList.add('opacity-70', 'cursor-wait'); btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> ${text}`; }
       else { btn.disabled = false; btn.classList.remove('opacity-70', 'cursor-wait'); if (btn.dataset.orig) btn.innerHTML = btn.dataset.orig; }
     }
@@ -283,21 +288,20 @@
     function showToast(title, msg, type = 'check') {
       const icons = { check: 'fa-check', info: 'fa-circle-info', error: 'fa-triangle-exclamation' };
       const colors = { check: 'bg-brand-sage', info: 'bg-brand-terracotta', error: 'bg-red-500' };
-      
+
       const el = document.getElementById('toast-icon');
       const titleEl = document.getElementById('toast-title');
       const msgEl = document.getElementById('toast-msg');
       const t = document.getElementById('toast');
 
-      // Se algum elemento do toast não existir na página, evita o erro no console
       if (!t || !titleEl || !msgEl || !el) return;
 
       el.className = `w-8 h-8 rounded-full ${colors[type]} flex items-center justify-center text-sm shrink-0`;
       el.innerHTML = `<i class="fa-solid ${icons[type]}"></i>`;
-      
+
       titleEl.textContent = title;
       msgEl.textContent = msg;
-      
+
       t.classList.remove('opacity-0', 'translate-y-6');
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => t.classList.add('opacity-0', 'translate-y-6'), 3400);
@@ -307,6 +311,7 @@
     function togglePassword() {
       const input = document.getElementById('login-password');
       const icon = document.getElementById('eye-icon');
+      if (!input || !icon) return;
       const show = input.type === 'password';
       input.type = show ? 'text' : 'password';
       icon.className = `fa-solid ${show ? 'fa-eye-slash' : 'fa-eye'} text-sm`;
@@ -316,8 +321,8 @@
       e.preventDefault();
       const btn = document.getElementById('login-btn');
       const email = val('login-email');
-      const password = document.getElementById('login-password').value;
-      
+      const password = document.getElementById('login-password')?.value || '';
+
       if (!sb) {
         showToast('Erro', 'Supabase não configurado.', 'error');
         return;
@@ -326,33 +331,34 @@
       setLoading(btn, true, 'Entrando...');
       try {
         const { error } = await sb.auth.signInWithPassword({ email, password });
-        if (error) { 
-          showToast('Não foi possível entrar', traduzErro(error.message), 'error'); 
+        if (error) {
+          showToast('Não foi possível entrar', traduzErro(error.message), 'error');
         }
         /* onAuthStateChange exibe o painel automaticamente se der certo */
-      } finally { 
-        setLoading(btn, false); 
+      } finally {
+        setLoading(btn, false);
       }
     }
 
     function showPanel() {
       if (panelVisible) return;
       panelVisible = true;
-      document.getElementById('login-screen').classList.add('hidden');
-      document.getElementById('panel-screen').classList.remove('hidden');
+      document.getElementById('login-screen')?.classList.add('hidden');
+      document.getElementById('panel-screen')?.classList.remove('hidden');
       loadProducts();
     }
 
     function showLogin() {
       panelVisible = false;
-      document.getElementById('panel-screen').classList.add('hidden');
-      document.getElementById('login-screen').classList.remove('hidden');
-      document.getElementById('login-password').value = '';
+      document.getElementById('panel-screen')?.classList.add('hidden');
+      document.getElementById('login-screen')?.classList.remove('hidden');
+      const pw = document.getElementById('login-password');
+      if (pw) pw.value = '';
     }
 
     async function logout() {
-      if (sb) { 
-        await sb.auth.signOut(); 
+      if (sb) {
+        await sb.auth.signOut();
       }
       showLogin();
     }
@@ -365,9 +371,10 @@
         products = [];
         renderList();
         showToast('Erro ao carregar', traduzErro(error.message), 'error');
+        console.error('[loadProducts] erro do Supabase:', error);
         return;
       }
-      products = data.map(r => ({
+      products = (data || []).map(r => ({
         id: String(r.id), title: r.title, category: r.category, price: r.price || '',
         image: r.image, link: r.link, description: r.description || '', createdAt: r.created_at,
       }));
@@ -378,14 +385,16 @@
     let io;
     function renderList() {
       const list = document.getElementById('admin-products-list');
-      document.getElementById('admin-count').textContent = products.length;
-      document.getElementById('stat-total').textContent = products.length;
-      document.getElementById('stat-cats').textContent = new Set(products.map(p => p.category)).size;
-      const latest = products.reduce((m, p) => (p.createdAt && (!m || p.createdAt > m)) ? p.createdAt : m, null);
-      document.getElementById('stat-last').textContent = fmtDate(latest);
 
-      document.getElementById('categories-list').innerHTML =
-        [...new Set(products.map(p => p.category))].map(c => `<option value="${esc(c)}">`).join('');
+      setText('admin-count', products.length);
+      setText('stat-total', products.length);
+      setText('stat-cats', new Set(products.map(p => p.category)).size);
+      const latest = products.reduce((m, p) => (p.createdAt && (!m || p.createdAt > m)) ? p.createdAt : m, null);
+      setText('stat-last', fmtDate(latest));
+
+      setHTML('categories-list', [...new Set(products.map(p => p.category))].map(c => `<option value="${esc(c)}">`).join(''));
+
+      if (!list) { console.warn('[renderList] #admin-products-list não encontrado no HTML.'); return; }
 
       if (!products.length) {
         list.innerHTML = `<div class="py-10 text-center text-sm text-gray-400 space-y-1">
@@ -426,7 +435,7 @@
     async function saveProduct(e) {
       e.preventDefault();
       if (!sb) return;
-      const id = document.getElementById('product-id').value;
+      const id = document.getElementById('product-id')?.value || '';
       const payload = {
         title: val('form-title'), category: val('form-category'), image: val('form-image'),
         link: val('form-link'), price: val('form-price'), description: val('form-description'),
@@ -446,36 +455,39 @@
         await loadProducts();
       } catch (err) {
         showToast('Erro ao salvar', traduzErro(err.message), 'error');
+        console.error('[saveProduct] erro:', err);
       } finally { setLoading(btn, false); }
     }
 
     function editProduct(id) {
       const p = products.find(x => String(x.id) === String(id));
       if (!p) return;
-      document.getElementById('product-id').value = p.id;
-      document.getElementById('form-title').value = p.title;
-      document.getElementById('form-category').value = p.category;
-      document.getElementById('form-image').value = p.image;
-      document.getElementById('form-link').value = p.link;
-      document.getElementById('form-price').value = p.price || '';
-      document.getElementById('form-description').value = p.description || '';
+      const set = (elId, v) => { const el = document.getElementById(elId); if (el) el.value = v; };
+      set('product-id', p.id);
+      set('form-title', p.title);
+      set('form-category', p.category);
+      set('form-image', p.image);
+      set('form-link', p.link);
+      set('form-price', p.price || '');
+      set('form-description', p.description || '');
       updateImagePreview();
-      document.getElementById('form-title-label').textContent = 'Editar produto';
-      document.getElementById('submit-btn-text').textContent = 'Salvar Alterações';
-      document.getElementById('cancel-edit-btn').classList.remove('hidden');
-      document.getElementById('form-title').focus();
+      setText('form-title-label', 'Editar produto');
+      setText('submit-btn-text', 'Salvar Alterações');
+      document.getElementById('cancel-edit-btn')?.classList.remove('hidden');
+      document.getElementById('form-title')?.focus();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function cancelEdit() { resetForm(); }
 
     function resetForm() {
-      document.getElementById('product-form').reset();
-      document.getElementById('product-id').value = '';
-      document.getElementById('form-title-label').textContent = 'Cadastrar novo achadinho';
-      document.getElementById('submit-btn-text').textContent = 'Adicionar Produto';
-      document.getElementById('cancel-edit-btn').classList.add('hidden');
-      document.getElementById('image-preview-wrap').classList.add('hidden');
+      document.getElementById('product-form')?.reset();
+      const idEl = document.getElementById('product-id');
+      if (idEl) idEl.value = '';
+      setText('form-title-label', 'Cadastrar novo achadinho');
+      setText('submit-btn-text', 'Adicionar Produto');
+      document.getElementById('cancel-edit-btn')?.classList.add('hidden');
+      document.getElementById('image-preview-wrap')?.classList.add('hidden');
     }
 
     function askDelete(id) {
@@ -516,30 +528,32 @@
 
     /* ---------- modal de confirmação ---------- */
     function askConfirm(title, msg, cb, okLabel = 'Excluir', icon = 'fa-trash-can', iconCls = 'bg-red-50 text-red-500') {
-      document.getElementById('confirm-title').textContent = title;
-      document.getElementById('confirm-msg').textContent = msg;
+      setText('confirm-title', title);
+      setText('confirm-msg', msg);
       const ic = document.getElementById('confirm-icon');
-      ic.className = `w-14 h-14 mx-auto rounded-full ${iconCls} flex items-center justify-center text-xl`;
-      ic.innerHTML = `<i class="fa-solid ${icon}"></i>`;
-      document.getElementById('confirm-ok').textContent = okLabel;
+      if (ic) {
+        ic.className = `w-14 h-14 mx-auto rounded-full ${iconCls} flex items-center justify-center text-xl`;
+        ic.innerHTML = `<i class="fa-solid ${icon}"></i>`;
+      }
+      setText('confirm-ok', okLabel);
       confirmCb = cb;
       const m = document.getElementById('confirm-modal');
-      m.classList.remove('hidden'); m.classList.add('flex');
+      if (m) { m.classList.remove('hidden'); m.classList.add('flex'); }
     }
     function closeConfirm() {
       const m = document.getElementById('confirm-modal');
-      m.classList.add('hidden'); m.classList.remove('flex');
+      if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
       confirmCb = null;
     }
-    document.getElementById('confirm-ok').addEventListener('click', () => {
+    document.getElementById('confirm-ok')?.addEventListener('click', () => {
       const cb = confirmCb; closeConfirm(); if (cb) cb();
     });
-    document.getElementById('confirm-modal').addEventListener('click', e => {
+    document.getElementById('confirm-modal')?.addEventListener('click', e => {
       if (e.target === e.currentTarget) closeConfirm();
     });
 
     /* ---------- ações da lista (delegação) ---------- */
-    document.getElementById('admin-products-list').addEventListener('click', e => {
+    document.getElementById('admin-products-list')?.addEventListener('click', e => {
       const btn = e.target.closest('button[data-edit], button[data-del]');
       if (!btn) return;
       if (btn.dataset.edit !== undefined) editProduct(btn.dataset.edit);
@@ -550,20 +564,21 @@
     function updateImagePreview() {
       const v = val('form-image');
       const wrap = document.getElementById('image-preview-wrap');
+      const img = document.getElementById('image-preview');
+      if (!wrap || !img) return;
       if (/^https?:\/\/.+/i.test(v)) {
-        document.getElementById('image-preview').src = v;
+        img.src = v;
         wrap.classList.remove('hidden');
       } else wrap.classList.add('hidden');
     }
-    document.getElementById('form-image').addEventListener('input', () => setTimeout(updateImagePreview, 50));
-    document.getElementById('image-preview').addEventListener('error', () => {
-      document.getElementById('image-preview-wrap').classList.add('hidden');
+    document.getElementById('form-image')?.addEventListener('input', () => setTimeout(updateImagePreview, 50));
+    document.getElementById('image-preview')?.addEventListener('error', () => {
+      document.getElementById('image-preview-wrap')?.classList.add('hidden');
     });
 
     /* ---------- inicialização e segurança ---------- */
     window.addEventListener('DOMContentLoaded', async () => {
       if (sb) {
-        // Verifica se já existe sessão ativa ao carregar a página
         const { data: { session } } = await sb.auth.getSession();
         if (session) {
           showPanel();
@@ -571,7 +586,6 @@
           showLogin();
         }
 
-        // Monitora mudanças de autenticação em tempo real
         sb.auth.onAuthStateChange((evt, session) => {
           if (evt === 'SIGNED_OUT' || !session) {
             showLogin();
